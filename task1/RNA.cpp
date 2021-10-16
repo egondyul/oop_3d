@@ -19,7 +19,7 @@ RNA::RNA(Nucl nucl, size_t rna_len)
 	}
 }
 
-void RNA::Set(Nucl nucl, size_t idx)
+void RNA::Set(Nucl nucl, size_t idx) const
 {
 	size_t t = idx / 8;
 	size_t i = 0;
@@ -35,7 +35,7 @@ void RNA::Set(Nucl nucl, size_t idx)
 	SetNucl(data[t], nucl, i);
 }
 
-void RNA::SetNucl(Int& elem, Nucl nucl, size_t idx)
+void RNA::SetNucl(Int& elem, Nucl nucl, size_t idx) const
 {
 	Int nucl_ch = Int(nucl);
 	Int tmp = 0x03;
@@ -65,12 +65,12 @@ void RNA::SetNucl(Int& elem, Nucl nucl, size_t idx)
 	std::cout << y << std::endl;*/
 }
 
-size_t RNA::capacity()
+const size_t RNA::capacity() const
 {
 	return (size-1) / 8 + 1;
 }
 
-Nucl RNA::getNuclFromArray(Int* array, size_t idx)
+Nucl RNA::getNuclFromArray(Int* array, size_t idx) const
 {
 	size_t t = idx / 8;
 	size_t i;
@@ -86,7 +86,7 @@ Nucl RNA::getNuclFromArray(Int* array, size_t idx)
 	return res;
 }
 
-Nucl RNA::getNucl(Int elem, size_t idx)
+Nucl RNA::getNucl(Int elem, size_t idx) const
 {
 	if (idx < 7)
 	{
@@ -99,7 +99,7 @@ Nucl RNA::getNucl(Int elem, size_t idx)
 	return element;
 }
 
-RNA& RNA::operator+(RNA& rna)
+RNA RNA::operator+(const RNA& rna) const
 {
 	size_t s = size + rna.size;
 	RNA tmp(A, s);
@@ -107,26 +107,32 @@ RNA& RNA::operator+(RNA& rna)
 
 	for (size_t i = 0; i < s - rna.size; i++)
 	{
-		tmp[i] = (*this)[i];
+		tmp[i] = this->getNuclFromArray(this->data, i);//(*this)[i];
 	}
 
 	for (size_t i = s - rna.size; i < s; i++)
 	{
-		tmp[i] = rna[i - (s - rna.size)];
+		tmp[i] = rna.getNuclFromArray(rna.data, i - (s - rna.size)); //rna[i - (s - rna.size)];
 	}
 
-	if ((*this).data != nullptr)
+	/*if ((*this).data != nullptr)
 	{
 		delete[](*this).data;
 		(*this).data = nullptr;
 	}
-	(*this) = tmp;
-	return *this;
+	(*this) = tmp;*/
+	return tmp;
 }
 
 RNA::RNA(const RNA& rna) :size(rna.size)
 {
-	size_t t = this->capacity();
+	size_t t = rna.capacity();
+	data = new Int[t];
+	for (int i = 0; i < t; i++)
+	{
+		data[i] = rna.data[i];
+	}
+	/*size_t t = this->capacity();
 	if (data != nullptr)
 	{
 		delete[] data;
@@ -136,7 +142,7 @@ RNA::RNA(const RNA& rna) :size(rna.size)
 	for (int i = 0; i < t; i++)
 	{
 		data[i] = rna.data[i];
-	}
+	}*/
 }
 
 RNA& RNA::operator=(const RNA& rna)
@@ -161,18 +167,16 @@ RNA& RNA::operator=(const RNA& rna)
 	return *this;
 }
 
-bool RNA::operator==(const RNA& rna)
+bool RNA::operator==(const RNA& rna) const
 {
-	std::cout << *this << std::endl;
-	std::cout << rna.data[0] << std::endl;
 	RNA tmp = rna;
-
 	bool res = true;
 	if (this->size == rna.size)
 	{
 		for (size_t i = 0; i < size; i++)
 		{
-			if ((*this)[i] != tmp[i]) //&& (*this).data[i] != rna.data[size - i - 1])
+			//if ((*this)[i] != tmp[i]) //&& (*this).data[i] != rna.data[size - i - 1])
+			if (this->getNuclFromArray(this->data, i) != rna.getNuclFromArray(rna.data, i))
 			{
 				res = false;
 				break;
@@ -186,7 +190,7 @@ bool RNA::operator==(const RNA& rna)
 	return res;
 }
 
-bool RNA::operator!=(const RNA&rna)
+bool RNA::operator!=(const RNA&rna) const
 {
 	/*bool res = true;
 	if (this->size == rna.size)
@@ -208,9 +212,8 @@ bool RNA::operator!=(const RNA&rna)
 	return !(operator==(rna));
 }
 
-RNA &RNA::operator!()
+RNA RNA::operator!() const
 {
-	std::cout << *this << std::endl;
 	for (size_t i = 0; i < size; i++)
 	{
 		Nucl nucl = getNuclFromArray(data, i);
@@ -231,7 +234,6 @@ RNA &RNA::operator!()
 		}
 
 	}
-	std::cout << *this << std::endl;
 	return *this;
 }
 
@@ -270,10 +272,9 @@ void RNA::trim(size_t lastIdx)
 	}
 }
 
-bool RNA::isComplimentary(RNA& rna)
+bool RNA::isComplimentary(const RNA& rna) const
 {
 	!rna;
-	std::cout << *this << std::endl;
 	if (rna == *this)
 	{
 		!rna;
@@ -286,9 +287,45 @@ size_t RNA::length()
 	return size;
 }
 
-std::unordered_map< Nucl, int, std::hash<int> > cardinality()
+std::unordered_map< Nucl, size_t, std::hash<Int> > RNA::cardinality()
 {
+	std::unordered_map< Nucl, size_t, std::hash<Int> > card;
+	for (size_t i = 0; i < size; i++)
+	{
+		if (card.count(getNuclFromArray((*this).data, i)) == 0) {
+			card.insert(std::unordered_map< Nucl, size_t, std::hash<Int> >::value_type(getNuclFromArray((*this).data, i), 1));
+		}
+		else
+		{
+			++card.at(getNuclFromArray((*this).data, i));
+		}
+	}
+	return card;
+}
 
+RNA& RNA::operator+(Nucl nucl)
+{
+	size_t s = size + 1;
+	RNA tmp(A, s);
+	for (size_t i = 0; i < s - 1; i++)
+	{
+		tmp[i] = this->getNuclFromArray(this->data, i);
+		//tmp[i] = (*this)[i];
+	}
+	tmp[s - 1] = nucl;
+	if ((*this).data != nullptr)
+	{
+		delete[](*this).data;
+		(*this).data = nullptr;
+	}
+	(*this) = tmp;
+	return *this;
+}
+
+RNA& RNA::operator+=(Nucl nucl)
+{
+	*this = *this + nucl;
+	return *this;
 }
 
 ostream & operator<<(ostream & os, RNA & rna)

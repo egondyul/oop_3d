@@ -6,7 +6,19 @@
 
 int main()
  {
-	RNA rna(G,10);
+	RNA rna(A, 10);
+	RNA rna2 = rna + rna;
+	std::cout << rna << std::endl;
+	std::cout << rna2 << std::endl;
+	rna = rna;
+	std::cout << rna << std::endl;
+
+	std::unordered_map< Nucl, size_t, std::hash<Int> > card = rna.cardinality();
+	for (auto& x : card) {
+		std::cout << x.first << ": " << x.second << std::endl;
+	}
+
+	/*RNA rna(G,10);
 	//std::cout << rna<<std::endl;
 	rna[2] = T;
 	rna[3] = rna[2];
@@ -26,7 +38,7 @@ int main()
 
 	//std::cout << rna.cardinality(G) << std::endl;
 
-	rna4.trim(5);
+	/*rna4.trim(5);
 	//std::cout << rna4 << std::endl;
 	
 	RNA rna_smt(A, 5);
@@ -36,7 +48,7 @@ int main()
 	std::cout << prove << std::endl;
 
 
-	DNA dna(rna_smt, rna_com);
+	DNA dna(rna_smt, rna_com);*/
 
 	/*Nucl nucl;
 	Int chr = 9;

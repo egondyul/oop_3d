@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdint>
 #include <bitset>
+#include <unordered_map>
 
 using namespace std;
 using Int = uint16_t;
@@ -21,15 +22,9 @@ private:
 	Int* data; //8 bytes - 8 nucleoutide
 	size_t size;
 public:
-	RNA()
-	{
-		size = 0;
-		data = new Int[0];
-	}
+	RNA(){}
 	RNA(Nucl nucl, size_t rna_len);
 	~RNA() { delete[] data; }
-
-	RNA& operator+(RNA& r);
 
 	class nuclref
 	{
@@ -38,6 +33,7 @@ public:
 		RNA* This;
 		//Nucl nucl;//BAD
 	public:
+		~nuclref(){}
 		nuclref() :This(nullptr), nucl_idx(0) {}
 		nuclref(size_t idx,RNA* rna):nucl_idx(idx),This(rna){}
 		nuclref& operator=(const Nucl& other)
@@ -63,7 +59,7 @@ public:
 			return *this;
 		}
 
-		bool operator==(const nuclref& other)
+		bool operator==(const nuclref& other) const
 		{
 			Nucl nucl_1 = This->getNuclFromArray(This->data, nucl_idx);
 			Nucl nucl_2 = This->getNuclFromArray(other.This->data, other.nucl_idx);
@@ -77,7 +73,7 @@ public:
 			}
 		}
 
-		bool operator!=(const nuclref& other)
+		bool operator!=(const nuclref& other) const
 		{
 			return !(operator==(other));
 		}
@@ -91,14 +87,14 @@ public:
 	};
 
 	RNA(const RNA& rna);
-
+	RNA operator+(const RNA& r) const;
 	RNA& operator=(const RNA& rna);
+	bool operator==(const RNA& rna) const;
+	bool operator!=(const RNA& rna) const;
+	RNA operator!() const;
 
-	bool operator==(const RNA& rna);
-	bool operator!=(const RNA& rna);
-
-	RNA &operator!();
-
+	RNA& operator+(Nucl nucl);
+	RNA& operator+=(Nucl nucl);
 
 	nuclref operator[](size_t idx)
 	{
@@ -122,21 +118,17 @@ public:
 		return nucl;
 	}*/
 
-	void Set(Nucl nucl, size_t idx);
-	void SetNucl(Int& elem, Nucl nucl, size_t idx);
-
-	//void SetNuclsInArray(Nucl nucl, size_t idx);
-	//Int setNucl(Int elem, Nucl nucl, size_t idx);
-
-	size_t capacity();
-
-	Nucl getNuclFromArray(Int* array, size_t idx);
-	Nucl getNucl(Int elem, size_t idx);
-
+	const size_t capacity() const;
 	size_t cardinality(Nucl nucl);
 	void trim(size_t lastIdx);
 	size_t length();
-
-	bool isComplimentary(RNA& rna);
+	bool isComplimentary(const RNA& rna) const;
+	std::unordered_map< Nucl, size_t, std::hash<Int> > cardinality();
 	friend ostream& operator<<(ostream&os, RNA& rna);
+
+private:
+	void Set(Nucl nucl, size_t idx) const;
+	void SetNucl(Int& elem, Nucl nucl, size_t idx) const;
+	Nucl getNuclFromArray(Int* array, size_t idx) const;
+	Nucl getNucl(Int elem, size_t idx) const;
 };
