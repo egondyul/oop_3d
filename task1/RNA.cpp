@@ -303,9 +303,38 @@ std::unordered_map< Nucl, size_t, std::hash<Int> > RNA::cardinality()
 	return card;
 }
 
+void RNA::reserve()
+{
+	if (size == 0)
+	{
+		data = new Int[1];
+		data[0] = 0;
+		++size;
+	}
+	else
+	{
+		size_t t = this->capacity();
+		Int *tmp = new Int[t * 2];
+		for (size_t i = 0; i < t; i++)
+		{
+			tmp[i] = data[i];
+		}
+		for (size_t i = t; i < 2 * t; i++)
+		{
+			tmp[i] = 0;
+		}
+		delete[]data;
+		data = tmp;
+	}
+}
+
 RNA& RNA::operator+(Nucl nucl)
 {
-	size_t s = size + 1;
+	++size;
+	reserve();
+	(*this)[size - 1] = nucl;
+	return *this;
+	/*size_t s = size + 1;
 	RNA tmp(A, s);
 	for (size_t i = 0; i < s - 1; i++)
 	{
@@ -319,13 +348,19 @@ RNA& RNA::operator+(Nucl nucl)
 		(*this).data = nullptr;
 	}
 	(*this) = tmp;
-	return *this;
+	return *this;*/
 }
 
 RNA& RNA::operator+=(Nucl nucl)
 {
 	*this = *this + nucl;
 	return *this;
+}
+
+Nucl RNA::operator=(const nuclref& nref) const
+{
+	Nucl nucl = nref.This->getNuclFromArray(nref.This->data, nref.nucl_idx);
+	return nucl;
 }
 
 ostream & operator<<(ostream & os, RNA & rna)

@@ -6,12 +6,25 @@
 
 int main()
  {
+	const RNA r(A, 10);
+	Nucl n = r[0];
+
+	/*size_t n = 100;
+	RNA tmp(A, 1);
+	for (size_t i = 0; i < n; i++)
+	{
+		tmp += Nucl(rand() & 3);
+	}
+	std::cout << n << std::endl;*/
+	//std::cout << tmp << std::endl;
+
 	RNA rna(A, 10);
 	RNA rna2 = rna + rna;
 	std::cout << rna << std::endl;
 	std::cout << rna2 << std::endl;
 	rna = rna;
 	std::cout << rna << std::endl;
+	//Nucl n = rna[1];
 
 	std::unordered_map< Nucl, size_t, std::hash<Int> > card = rna.cardinality();
 	for (auto& x : card) {

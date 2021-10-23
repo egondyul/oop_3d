@@ -19,7 +19,7 @@ enum Nucl :char
 class RNA
 {
 private:
-	Int* data; //8 bytes - 8 nucleoutide
+	mutable Int* data; //8 bytes - 8 nucleoutide
 	size_t size;
 public:
 	RNA(){}
@@ -50,7 +50,7 @@ public:
 		nuclref& operator=(const nuclref& other)
 		{
 			Nucl nucl_1 = This->getNuclFromArray(This->data, nucl_idx);
-			Nucl nucl_2 = This->getNuclFromArray(other.This->data, other.nucl_idx);
+			Nucl nucl_2 = other.This->getNuclFromArray(other.This->data, other.nucl_idx);
 			if (nucl_1 == nucl_2)
 			{
 				return *this;
@@ -93,13 +93,22 @@ public:
 	bool operator!=(const RNA& rna) const;
 	RNA operator!() const;
 
+	Nucl operator=(const nuclref& nref) const;
+
 	RNA& operator+(Nucl nucl);
 	RNA& operator+=(Nucl nucl);
+	void reserve();
 
 	nuclref operator[](size_t idx)
 	{
 		return nuclref(idx,this);
 	}
+
+	Nucl operator[](size_t idx) const
+	{
+		return (*this).getNuclFromArray((*this).data, idx);
+	}
+	
 	//нужна ссылка внутрь байта
 	/*Nucl& operator[](size_t idx)
 	{
