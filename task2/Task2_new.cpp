@@ -11,8 +11,9 @@ int main()
 {
 	HashMap<int, char> map;
 	map.insert(make_pair(1, 'a'));
-	HashMap<int, char> map2{ make_pair(1,'a') };
-	for (auto& it : map) {
+	HashMap<int, char> map2{ make_pair(1,'a'), make_pair(3,'a') };
+	map2.insert(make_pair(2, 'c'));
+	for (auto& it : map2) {
 		std::cout << it.first << " " << it.second << std::endl;
 	}
 	map[1] = 'b';
@@ -22,9 +23,37 @@ int main()
 
 	HashMap map3 = map;
 
+	HashMap<int, std::string> map4;
+
+	auto begin = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < 1000000; i++) {
+		map4.insert(make_pair(i, "AAAA "));
+	}
+	auto end = std::chrono::high_resolution_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << std::endl;
+
+	auto beginT = std::chrono::high_resolution_clock::now();
+	std::thread thread1([&]() {
+		for (int i = 0; i < 1000000; i++) {
+			map4.insert(make_pair(i, "BBBB "));
+		}
+	});
+
+	auto endT = std::chrono::high_resolution_clock::now();
+	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(endT - beginT).count() <<std::endl;
+
+
+	thread1.join();
+
+	for (auto& it : map4) {
+		std::cout << it.first << " " << it.second << std::endl;
+	}
+
 	/*for (int i = 0; i < 1000000; i++) {
 		map.insert(make_pair(i, 'f'));
 	}*/
+
+
 
 
 	/*HashMap<int, std::string> map2;
@@ -38,6 +67,23 @@ int main()
 	worker1.join();
 
 	const HashMap<int, char> map3(std::move(map));*/
+
+
+	/*std::threadsafe::stack<int> stack;
+	stack.push(0);
+
+	std::thread threads[NUM_WORKERS];
+
+	for (int i = 0;i < NUM_WORKERS;i++)
+		threads[i] = std::thread(increment,std::ref(stack));
+
+	for (int i = 0;i < NUM_WORKERS;i++)
+		threads[i].join();
+
+	// It should print: NUM_WORKERS*INCR
+	int n;
+	stack.wait_pop(n);
+	std::cout << n << std::endl;*/
 
 	return 0;
 }

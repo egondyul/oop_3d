@@ -64,7 +64,6 @@ public:
 
 	HashMap(HashMap&& other)
 	{
-		std::shared_lock<std::shared_mutex> lock(other.mutex);
 		hasher = std::move(other.hasher);
 		table = std::move(other.table);
 		elements = std::move(other.elements);
@@ -108,6 +107,7 @@ public:
 
 	void insert(const std::pair<const Key, T>& elem)
 	{
+		std::unique_lock<std::shared_mutex> lock(mutex); //
 		auto idx = hasher(elem.first) % table.size();
 		elements.push_back(elem);
 		auto last = elements.end();
@@ -145,11 +145,13 @@ public:
 
 	size_t size() const noexcept
 	{
+		std::shared_lock<std::shared_mutex> lock(mutex);
 		return size_;
 	}
 
 	bool empty() const noexcept
 	{
+		std::shared_lock<std::shared_mutex> lock(mutex);
 		return size_ == 0;
 	}
 
@@ -177,7 +179,7 @@ public:
 
 	iterator find_(const Key& key) 
 	{
-		
+		//std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = hasher(key) % table.size();
 		while (elements.begin() != elements.end())
 		{
@@ -193,19 +195,21 @@ public:
 
 	iterator find(const Key& key)
 	{
+		//std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = find_(key);
 		return idx;
 	}
 
 	const_iterator find(const Key& key) const
 	{
+		//std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = find_(key);
 		return static_cast<const_iterator>(idx);
 	}
 
 	T& operator[](const Key& key)
 	{
-		std::shared_lock<std::shared_mutex> lock(mutex);
+		std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = find(key);
 		if (idx != end())
 		{
@@ -219,7 +223,7 @@ public:
 
 	T& operator[](Key&& key)
 	{
-		std::shared_lock<std::shared_mutex> lock(mutex);
+		std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = find(key);
 		if (idx != end())
 		{
@@ -252,7 +256,7 @@ public:
 
 	std::optional<T> get(const Key& key)
 	{
-		std::shared_lock<std::shared_mutex> lock(mutex);
+		std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = find(key);
 		if (idx != end())
 		{
