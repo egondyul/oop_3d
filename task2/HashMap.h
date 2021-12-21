@@ -72,7 +72,27 @@ public:
 
 	virtual ~HashMap() {}
 
-	HashMap& operator=(const HashMap<Key, T>& other)
+	HashMap& operator=(const HashMap<Key, T, Hash, TAllocator>& other)
+	{
+		std::unique_lock<std::shared_mutex>lock(mutex);
+		this->hasher = other.hasher;
+		this->table = other.table;
+		this->elements = other.elements;
+		this->size_ = other.size_;
+		return *this;
+	}
+
+	HashMap& operator=(HashMap<Key, T, Hash, TAllocator>&& other)
+	{
+		std::unique_lock<std::shared_mutex>lock(mutex);
+		this->hasher = std::move(other.hasher);
+		this->table = std::move(other.table);
+		this->elements = std::move(other.elements);
+		this->size_ = other.size_;
+		return *this;
+	}
+
+	/*HashMap& operator=(const HashMap<Key, T>& other)
 	{
 		std::unique_lock<std::shared_mutex> lock(mutex);
 		if (this == &other)
@@ -83,10 +103,11 @@ public:
 		hasher = other.hasher;
 		table.resize(1, elements.end());
 		size_ = other.size_;
-		while (other.elements.begin() != other.elements.end())
-		{
-			insert(*(other.elements.begin())++);
-		}
+		elements = other.elements;
+		//while (other.elements.begin() != other.elements.end())
+		//{
+		//	insert(*(other.elements.begin())++);
+		//}
 		return *this;
 	}
 
@@ -103,13 +124,18 @@ public:
 		elements = std::move(other.elements);
 		size_ = other.size_;
 		return *this;
-	}
+	}*/
 
 	void insert(const std::pair<const Key, T>& elem)
 	{
-		std::unique_lock<std::shared_mutex> lock(mutex); //
+		//std::unique_lock<std::shared_mutex> lock(mutex); //
+		if (size_ / table.size() > 0.8)
+		{
+			rehash(table.size());
+		}
 		auto idx = hasher(elem.first) % table.size();
 		elements.push_back(elem);
+		size_ = elements.size();
 		auto last = elements.end();
 		--last;
 		table[idx] = last;
@@ -141,6 +167,19 @@ public:
 		std::swap(elements, new_map.elements);
 		std::swap(size_, new_map.size_);
 		lock.unlock();
+	}
+
+	void swap(HashMap<Key, T, Hash, TAllocator>& other)
+	{
+		std::unique_lock<std::shared_mutex> lock(mutex);
+		this->table.swap(other.table);
+		this->elements.swap(other.elements);
+		size_t tmp = size_;
+		size_ = other.size_;
+		other.size_ = tmp;
+		Hash tmp2 = hasher;
+		hasher = other.hasher;
+		other.hasher = tmp2;
 	}
 
 	size_t size() const noexcept
@@ -254,7 +293,7 @@ public:
 		}
 	}
 
-	std::optional<T> get(const Key& key)
+	/*std::optional<T> get(const Key& key)
 	{
 		std::unique_lock<std::shared_mutex> lock(mutex);
 		auto idx = find(key);
@@ -263,7 +302,7 @@ public:
 			return idx->second;
 		}
 		return {};
-	}
+	}*/
 
 private:
 	Hash hasher;
@@ -271,7 +310,7 @@ private:
 	std::list<node_type> elements;
 	size_t size_;
 
-	std::shared_mutex mutex;
+	mutable std::shared_mutex mutex;
 };
 
 
