@@ -1,6 +1,8 @@
 ﻿// ControlWork.cpp : Этот файл содержит функцию "main". Здесь начинается и заканчивается выполнение программы.
 
 #include <thread>
+#include <atomic>
+#include <mutex>
 #include <iostream>
 
 //task 1
@@ -38,11 +40,103 @@ private:
 	std::thread t;
 };
 
+//task2
+class Car
+{
+public:
+	void set_false()
+	{
+		is_painted =false;
+	}
+	void set_true()
+	{
+		is_painted = true;
+	}
+	bool get_flag()
+	{
+		return is_painted;
+	}
+
+private:
+	bool is_painted = false;
+};
+ //нужно исключить повторное взятие ранее полученных блокировок
+class Painter
+{
+public:
+
+private:
+	std::thread th_painter;
+};
+
+class Dryer
+{
+public:
+
+private:
+	std::thread th_dryer;
+};
+
+//task 3
+class Singleton1
+{
+	Singleton1() {};
+	static std::atomic<Singleton1*> instance;
+	static std::mutex m;
+public:
+	static Singleton1 * getInstance()
+	{
+		if (nullptr == instance)
+		{
+			std::lock_guard<std::mutex> lock(m);
+			if (nullptr == instance)
+			{
+				instance = new Singleton1;
+			}
+		}
+	}
+};
+
+class Singleton2
+{
+	Singleton2() {};
+	static std::atomic<Singleton2*> instance;
+	static std::mutex m;
+public:
+	
+	static Singleton2 * getInstance()
+	{
+		auto tmp = instance.load(std::memory_order_relaxed);
+		std::_Atomic_thread_fence(std::memory_order_acquire);
+		if (nullptr == tmp)
+		{
+			std::lock_guard<std::mutex> lock(m);
+			tmp = instance.load(std::memory_order_relaxed);
+			if (nullptr == tmp)
+			{
+				tmp = new Singleton2;
+				std::atomic_thread_fence(std::memory_order_release);
+				instance.store(tmp, std::memory_order_relaxed);
+			}
+		}
+		return instance.load();
+	}
+};
+
 
 int main()
 {
+	//task 1
 	ThreadRAII th_raii(std::thread());
 	
+	//task 3
+	Singleton1* ptr1 = Singleton1::getInstance();
+	Singleton2* ptr2 = Singleton2::getInstance();
+
+	
+
+
+
 
 	return 0;
 }
