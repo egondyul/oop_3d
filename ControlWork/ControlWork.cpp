@@ -94,8 +94,12 @@ public:
 				instance = new Singleton1;
 			}
 		}
+
+		return instance.load();
 	}
 };
+std::atomic<Singleton1*> Singleton1::instance = nullptr;
+std::mutex Singleton1::m;
 
 class Singleton2
 {
@@ -121,6 +125,49 @@ public:
 		}
 		return instance.load();
 	}
+};
+std::atomic<Singleton2*> Singleton2::instance = nullptr;
+std::mutex Singleton2::m;
+
+//task4
+/*class SpinLock
+{
+public:
+
+	void unlock()
+	{
+		while (flag.test_and_set(std::memory_order_acquire));
+	}
+	inline void unlock()
+	{
+		flag.clear(std::memory_order_release);
+	}
+private:
+	std::atomic_flag flag;
+};*/
+
+class SpinLock
+{
+public:
+	SpinLock() : fFlag{ false }
+	{
+	}
+
+	SpinLock(SpinLock const &) = delete;
+	SpinLock &operator=(SpinLock const &) = delete;
+	inline void lock()
+	{
+		while (fFlag.test_and_set(std::memory_order_acquire))
+		{
+			// nothing to do => spin
+		};
+	}
+	inline void unlock()
+	{
+		fFlag.clear(std::memory_order_release);
+	}
+private:
+	std::atomic_flag fFlag;
 };
 
 
