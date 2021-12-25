@@ -2,6 +2,7 @@
 
 #include <thread>
 #include <atomic>
+#include <chrono>
 #include <mutex>
 #include <iostream>
 
@@ -41,7 +42,7 @@ private:
 };
 
 //task2
-class Car
+/*class Car
 {
 public:
 	void set_false()
@@ -59,22 +60,62 @@ public:
 
 private:
 	bool is_painted = false;
-};
+};*/
+
+bool is_p = false;
+std::timed_mutex m_car;
  //нужно исключить повторное взятие ранее полученных блокировок
 class Painter
 {
 public:
+	void paint()
+	{
+		std::chrono::milliseconds timeout(100);
 
-private:
-	std::thread th_painter;
+		while (true)
+		{
+			if (m_car.try_lock_for(timeout))
+			{
+				if (is_p == true)
+				{
+					std::cout << std::this_thread::get_id() << "is paint" << std::endl;
+				}
+				is_p = true;
+				m_car.unlock();
+			}
+			else
+			{
+				is_p = false;
+			}
+		}
+	}
 };
 
 class Dryer
 {
 public:
+	void dry()
+	{
+		std::chrono::milliseconds timeout(100);
 
-private:
-	std::thread th_dryer;
+		while (true)
+		{
+			if (m_car.try_lock_for(timeout))
+			{
+				if (is_p == false)
+				{
+					std::cout << std::this_thread::get_id() << "is dry" << std::endl;
+
+				}
+				is_p = false;
+				m_car.unlock();
+			}
+			else
+			{
+				is_p = true;
+			}
+		}
+	}
 };
 
 //task 3
@@ -130,22 +171,6 @@ std::atomic<Singleton2*> Singleton2::instance = nullptr;
 std::mutex Singleton2::m;
 
 //task4
-/*class SpinLock
-{
-public:
-
-	void unlock()
-	{
-		while (flag.test_and_set(std::memory_order_acquire));
-	}
-	inline void unlock()
-	{
-		flag.clear(std::memory_order_release);
-	}
-private:
-	std::atomic_flag flag;
-};*/
-
 class SpinLock
 {
 public:
@@ -180,9 +205,26 @@ int main()
 	Singleton1* ptr1 = Singleton1::getInstance();
 	Singleton2* ptr2 = Singleton2::getInstance();
 
-	
+	//task4
+	SpinLock spin();
 
+	//task2
+	Painter p;
+	Dryer d;
 
+	std::thread worker1([&]()
+	{
+		d.dry();
+	}
+	);
+	std::thread worker2([&]()
+	{
+		p.paint();
+	}
+	);
+
+	worker1.join();
+	worker2.join();
 
 
 	return 0;
